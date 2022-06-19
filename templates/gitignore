@@ -1,0 +1,7 @@
+*.swp
+/local/
+/tmp/
+/dibs/
+/.build/
+/[% distro_name %]-*.tar.gz
+/[% distro_name %]-*/

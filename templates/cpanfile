@@ -1,0 +1,26 @@
+requires 'perl', '5.024000';
+requires 'Mojolicious';
+requires 'IO::Socket::SSL';
+[% if (V 'has_db') { %]
+requires 'DBI';
+requires 'Mojo::SQLite';
+requires 'Mojo::Pg';
+[% if (V 'has_minion') { %]
+requires 'Minion';
+requires 'Minion::Backend::SQLite';
+requires 'Minion::Backend::Pg';
+[%    } %]
+[% } %]
+requires 'Ouch';
+requires 'Try::Catch';
+
+on test => sub {
+   requires 'Path::Tiny',      '0.084';
+};
+
+on develop => sub {
+   requires 'Path::Tiny',          '0.084';
+   requires 'Template::Perlish',   '1.52';
+   requires 'Test::Pod::Coverage', '1.04';
+   requires 'Test::Pod',           '1.51';
+};

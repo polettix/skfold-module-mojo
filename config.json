@@ -1,0 +1,133 @@
+{
+   "git-init": true,
+   "single-file": false,
+   "options": [
+      {
+         "mandatory": true,
+         "getopt": "abstract|A=s"
+      },
+      {
+         "mandatory": true,
+         "getopt": "author|a=s"
+      },
+      {
+         "mandatory": true,
+         "getopt": "email|e=s"
+      },
+      {
+         "mandatory": false,
+         "getopt": "version|v=s",
+         "default": "0.001"
+      },
+      {
+         "getopt": "year|y=i",
+         "default": "[%= (localtime)[5] + 1900 %]"
+      },
+      {
+         "mandatory": true,
+         "getopt": "github|github-name|G=s"
+      },
+      {
+         "mandatory": "false",
+         "getopt": "has_controller|controller!",
+         "default": 1
+      },
+      {
+         "mandatory": "false",
+         "getopt": "has_db|db!",
+         "default": 0
+      },
+      {
+         "mandatory": "false",
+         "getopt": "has_minion|minion!",
+         "default": 0
+      }
+   ],
+   "files": [
+      {
+         "source": "LICENSE",
+         "destination": "LICENSE"
+      },
+      {
+         "source": "README.md",
+         "destination": "README.md"
+      },
+      {
+         "source": "cpanfile",
+         "destination": "cpanfile"
+      },
+      {
+         "source": "gitignore",
+         "destination": ".gitignore"
+      },
+      {
+         "source": "Changes",
+         "destination": "Changes"
+      },
+      {
+         "destination": "t",
+         "mode": "a=rx,u+w"
+      },
+      {
+         "source": "00-load.t",
+         "destination": "t/00-load.t"
+      },
+      {
+         "destination": "bin",
+         "mode": "a=rx,u+w"
+      },
+      {
+         "source": "app.pl",
+         "destination": "bin/app",
+         "mode": "a=rx,u+w"
+      },
+      {
+         "source": "main-module.pm",
+         "destination": "*module",
+         "mode": "a=r,u+w",
+         "dmode": "a=rx,u+w"
+      },
+      {
+         "source": "controller-module.pm",
+         "destination": "*module",
+         "suffix": "::Controller",
+         "condition": "has_controller",
+         "add_key": "controller_module",
+         "mode": "a=r,u+w",
+         "dmode": "a=rx,u+w"
+      },
+      {
+         "source": "controller-basic-module.pm",
+         "destination": "*module",
+         "suffix": "::Controller::Basic",
+         "condition": "has_controller",
+         "add_key": "controller_basic_module",
+         "mode": "a=r,u+w",
+         "dmode": "a=rx,u+w"
+      },
+      {
+         "source": "minion-module.pm",
+         "destination": "*module",
+         "suffix": "::Minion",
+         "condition": "has_minion",
+         "add_key": "minion_module",
+         "mode": "a=r,u+w",
+         "dmode": "a=rx,u+w"
+      },
+      {
+         "source": "minion-basic-module.pm",
+         "destination": "*module",
+         "suffix": "::Minion::Basic",
+         "condition": "has_minion",
+         "add_key": "minion_basic_module",
+         "mode": "a=r,u+w",
+         "dmode": "a=rx,u+w"
+      },
+      {
+         "**NOTE**": "leave this fragment *after* any module",
+         "source": "module.pod",
+         "destination": "*pod",
+         "mode": "a=r,u+w"
+      }
+   ]
+}
