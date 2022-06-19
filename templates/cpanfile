@@ -8,7 +8,6 @@ requires 'Mojo::Pg';
 [% if (V 'has_minion') { %]
 requires 'Minion';
 requires 'Minion::Backend::SQLite';
-requires 'Minion::Backend::Pg';
 [%    } %]
 [% } %]
 requires 'Ouch';
