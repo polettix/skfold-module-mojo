@@ -88,7 +88,7 @@
          "dmode": "a=rx,u+w"
       },
       {
-         "source": "controller-module.pm",
+         "source": "controller-base-module.pm",
          "destination": "*module",
          "suffix": "::Controller",
          "condition": "has_controller",
@@ -97,7 +97,7 @@
          "dmode": "a=rx,u+w"
       },
       {
-         "source": "controller-basic-module.pm",
+         "source": "controller-route-module.pm",
          "destination": "*module",
          "suffix": "::Controller::Basic",
          "condition": "has_controller",
@@ -111,15 +111,6 @@
          "suffix": "::Minion",
          "condition": "has_minion",
          "add_key": "minion_module",
-         "mode": "a=r,u+w",
-         "dmode": "a=rx,u+w"
-      },
-      {
-         "source": "minion-basic-module.pm",
-         "destination": "*module",
-         "suffix": "::Minion::Basic",
-         "condition": "has_minion",
-         "add_key": "minion_basic_module",
          "mode": "a=r,u+w",
          "dmode": "a=rx,u+w"
       },

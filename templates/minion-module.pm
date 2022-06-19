@@ -1,10 +1,15 @@
 package [% module %];
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
-use [% my $module = V 'all_modules.minion_basic_module'; %][% $module %];
-
 sub register ($self, $app, $config) {
-   [% $module %]::sub_register($self, $app, $config);
+   my $minion = $app->minion;
+   $minion->add_task('some/example' => \&example);
+   return;
+}
+
+sub example ($job) {
+   $job->app->log->info('Howdy!');
+   return;
 }
 
 1;
