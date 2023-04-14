@@ -39,14 +39,27 @@ sub startup ($self) {
 
 sub _startup_config ($self) {
    my $config = eval { $self->plugin('NotYAMLConfig') } || {};
+
+   # variables with a prefix
    my $prefix = (uc(MONIKER) =~ s{-}{_}rgmxs) . '_';
    for my $key (qw<
-         [% if ($has_db) { %]dsn[% } %]
+         [% if ($has_db) { %]dsn_url[% } %]
+         remap_env
       >) {
       my $env_key = $prefix . uc($key);
       $config->{$key} = $ENV{$env_key} if defined $ENV{$env_key};
    }
-   $self->conf($config);
+
+   # variables to be taken remapped from the environment
+   if (defined(my $straight = $config->{remap_env})) {
+      for my $definition (split m{,}mxs, $straight) {
+         my ($key, $env_key) = split m{=}mxs, $definition, 2;
+         $env_key = $key unless length($env_key // '');
+         $config->{$key} = $ENV{$env_key} if defined $ENV{$env_key};
+      }
+   }
+
+   $self->config($config);
    return $self;
 }
 [%
