@@ -51,15 +51,15 @@ sub _startup_config ($self) {
    }
 
    # variables to be taken remapped from the environment
-   if (defined(my $straight = $config->{remap_env})) {
-      for my $definition (split m{,}mxs, $straight) {
+   if (defined(my $remaps = $config->{remap_env})) {
+      for my $definition (split m{,}mxs, $remaps) {
          my ($key, $env_key) = split m{=}mxs, $definition, 2;
          $env_key = $key unless length($env_key // '');
          $config->{$key} = $ENV{$env_key} if defined $ENV{$env_key};
       }
    }
 
-   $self->config($config);
+   $self->conf($config); # WARN: this is really named "conf", NOT "config"
    return $self;
 }
 [%
