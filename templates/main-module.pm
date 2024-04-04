@@ -8,6 +8,8 @@ use Mojo::Util qw< b64_decode >;
    my $has_db = V 'has_db';
    my $has_minion = V 'has_minion';
    my $has_controller = V 'has_controller';
+   my $has_authentication = V 'has_authentication';
+   $has_db = 1 if $has_authentication;
 
    if ($has_controller) {
 %]use [% all_modules.controller_module %];
@@ -24,16 +26,21 @@ use constant DEFAULT_SECRETS => '[%=
 has 'conf';
 [%
    if ($has_db) {
-%]has db => \&_new_db_instance;
+%]has model => \&_new_db_instance;
 [% } %]
 sub startup ($self) {
    $self->moniker(MONIKER);
-   $self->_startup_config[% if ($has_minion) { %]
+   $self->_startup_config
+      ->_startup_secrets[% if ($has_db) { %]
+      ->_startup_model[% } %][% if ($has_authentication) { %]
+      ->_startup_authentication[% } %]
+      ->_startup_hooks[% if ($has_minion) { %]
       ->_startup_minion[% } %][% if ($has_controller) { %]
       ->_startup_routes[% } %]
-      ->_startup_secrets;[% if ($has_controller) { %]
+      ;[% if ($has_controller) { %]
    $self->controller_class('[% all_modules.controller_module %]');[% } %]
    $self->log->info('startup complete');
+   $self->defaults(layout => 'default');
    return $self;
 }
 
@@ -71,6 +78,10 @@ sub _db_technology ($self) {
 }
 sub _db_class ($self) { 'Mojo::' . $self->_db_technology }
 sub _new_db_instance ($self) { $self->_db_class->new($self->_dsn) }
+sub _startup_model ($self) {
+   # FIXME anything to do here?
+   return $self;
+}
 [%
       if ($has_minion) {
 %]
@@ -84,7 +95,58 @@ sub _startup_minion ($self) {
       }
    }
 %]
+[%
+      if ($has_authentication) {
+%]
+sub _startup_authentication ($self) {
+   require [% all_modules.authentication_module %];
+   my $module = '[% all_modules.authentication_module %]';
+   $self->plugin(
+      Authentication => {
+         load_user     => $module->can('load_user'),
+         validate_user => $module->can('validate_user'),
+      }
+   );
+
+   $self->hook(
+      before_render => sub ($c, $args) {
+         my $acct = $c->is_user_authenticated ? $c->current_user : undef;
+         $c->stash(account => $acct);
+         return $c;
+      }
+   );
+
+   # routes scaffolding
+   my $r = $self->routes;
+   $r->get('login')->to('authentication#show_login');
+   $r->post('login')->to('authentication#do_login');
+   $r->get('logout')->to('authentication#do_logout');
+   $r->post('logout')->to('authentication#do_logout');
+   # FIXME add routes for API login/logout
+
+   # to set authenticated routes, change method "_authenticated_routes"
+   my $auth = $r->under('/auth')->to('authentication#check');
+   $self->_authenticated_routes($auth);
+
+   # add a final catchall to force anything under /auth to require
+   # authentication, even non-existent routes. This avoids leaking info
+   # about which authenticated routes are valid and which not.
+   $auth->any('*' => sub ($c) { return $c->render(status => 404) });
+
+   return $self;
+}
+
+sub _authenticated_routes ($self, $root) {
+   $root->get('/')->to('authenticated-basic#root');
+}
+[%
+   }
+%]
 sub __split_and_decode ($s) { map { b64_decode($_) } split m{\s+}mxs, $s }
+
+sub _startup_hooks ($self) {
+   return $self;
+}
 
 sub _startup_secrets ($self) {
    my $config = $self->conf;

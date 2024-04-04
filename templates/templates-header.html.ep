@@ -1,0 +1,14 @@
+% my $site_title = 'Site Title';
+<header<% if ($account) { %> class="authenticated"<% } %>>
+%= link_to $site_title => '/' => class => 'site-title'
+% if ($account) {
+%= link_to Authenticated => '/auth' => class => 'site-title'
+<em><%= $account->{name} %></em> (<%= link_to logout => '/logout' %>)
+% } else {
+%= form_for '/login' => (method => 'post') => begin
+%=    text_field     username => placeholder => 'username...'
+%=    password_field password => placeholder => 'password...'
+%=    submit_button 'log in' 
+%= end
+% }
+</header>

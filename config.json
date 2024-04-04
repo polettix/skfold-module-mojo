@@ -29,6 +29,11 @@
       },
       {
          "mandatory": "false",
+         "getopt": "has_authentication|authentication!",
+         "default": 1
+      },
+      {
+         "mandatory": "false",
          "getopt": "has_controller|controller!",
          "default": 1
       },
@@ -82,8 +87,71 @@
          "mode": "a=rx,u+w"
       },
       {
+         "destination": "templates",
+         "mode": "a=rx,u+w"
+      },
+      {
+         "source": "templates-home.html.ep",
+         "destination": "templates/home.html.ep",
+         "mode": "a=r,u+w"
+      },
+      {
+         "source": "templates-header.html.ep",
+         "destination": "templates/header.html.ep",
+         "mode": "a=r,u+w"
+      },
+      {
+         "source": "templates-footer.html.ep",
+         "destination": "templates/footer.html.ep",
+         "mode": "a=r,u+w"
+      },
+      {
+         "destination": "templates/layouts",
+         "mode": "a=rx,u+w"
+      },
+      {
+         "source": "templates-layouts-default.html.ep",
+         "destination": "templates/layouts/default.html.ep",
+         "mode": "a=r,u+w"
+      },
+      {
+         "destination": "templates/authenticated",
+         "mode": "a=rx,u+w"
+      },
+      {
+         "source": "templates-authenticated-home.html.ep",
+         "destination": "templates/authenticated/home.html.ep",
+         "mode": "a=r,u+w"
+      },
+      {
+         "destination": "public",
+         "mode": "a=rx,u+w"
+      },
+      {
+         "source": "style.css",
+         "destination": "public/style.css",
+         "mode": "a=r,u+w"
+      },
+      {
+         "destination": "public/images",
+         "mode": "a=rx,u+w"
+      },
+      {
+         "destination": "public/images/icons",
+         "mode": "a=rx,u+w"
+      },
+      {
          "source": "main-module.pm",
          "destination": "*module",
+         "mode": "a=r,u+w",
+         "dmode": "a=rx,u+w"
+      },
+      {
+         "source": "authentication-module.pm",
+         "destination": "*module",
+         "suffix": "::Authentication",
+         "condition": "has_authentication",
+         "add_key": "authentication_module",
          "mode": "a=r,u+w",
          "dmode": "a=rx,u+w"
       },
@@ -102,6 +170,24 @@
          "suffix": "::Controller::Basic",
          "condition": "has_controller",
          "add_key": "controller_basic_module",
+         "mode": "a=r,u+w",
+         "dmode": "a=rx,u+w"
+      },
+      {
+         "source": "controller-private-routes.pm",
+         "destination": "*module",
+         "suffix": "::Controller::Authenticated::Basic",
+         "condition": "has_authentication",
+         "add_key": "controller_authenticated_basic_module",
+         "mode": "a=r,u+w",
+         "dmode": "a=rx,u+w"
+      },
+      {
+         "source": "controller-authentication-routes.pm",
+         "destination": "*module",
+         "suffix": "::Controller::Authentication",
+         "condition": "has_authentication",
+         "add_key": "controller_authentication_module",
          "mode": "a=r,u+w",
          "dmode": "a=rx,u+w"
       },

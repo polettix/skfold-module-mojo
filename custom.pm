@@ -7,6 +7,8 @@ sub adapt_module_configuration {
    my ($config) = @_;
 
    $config->{opts}{has_db} = 1 if $config->{opts}{has_minion};
+   $config->{opts}{has_controller} = 1
+      if $config->{opts}{has_authentication};
 
    my $tdir = path($config->{target_dir});
    $config->{target_dir} =~ s{::}{-}gmxs;

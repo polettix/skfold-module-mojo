@@ -10,6 +10,9 @@ requires 'Minion';
 requires 'Minion::Backend::SQLite';
 [%    } %]
 [% } %]
+[% if (V 'has_authentication') { %]
+requires 'Mojolicious::Plugin::Authentication';
+[% } %]
 requires 'Ouch';
 requires 'Try::Catch';
 
