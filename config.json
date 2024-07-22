@@ -70,6 +70,10 @@
          "destination": "Changes"
       },
       {
+         "destination": "tmp",
+         "mode": "a=rx,u+w"
+      },
+      {
          "destination": "t",
          "mode": "a=rx,u+w"
       },
@@ -103,6 +107,11 @@
       {
          "source": "templates-footer.html.ep",
          "destination": "templates/footer.html.ep",
+         "mode": "a=r,u+w"
+      },
+      {
+         "source": "templates-not_found.html.ep",
+         "destination": "templates/not_found.html.ep",
          "mode": "a=r,u+w"
       },
       {
@@ -148,7 +157,7 @@
       },
       {
          "source": "authentication-module.pm",
-         "destination": "*module",
+         "destination": "*skip module",
          "suffix": "::Authentication",
          "condition": "has_authentication",
          "add_key": "authentication_module",
@@ -156,7 +165,7 @@
          "dmode": "a=rx,u+w"
       },
       {
-         "source": "controller-base-module.pm",
+         "source": "controller-module.pm",
          "destination": "*module",
          "suffix": "::Controller",
          "condition": "has_controller",
@@ -165,29 +174,85 @@
          "dmode": "a=rx,u+w"
       },
       {
-         "source": "controller-route-module.pm",
+         "source": "controller-protected-module.pm",
          "destination": "*module",
-         "suffix": "::Controller::Basic",
+         "suffix": "::Controller::Protected",
          "condition": "has_controller",
-         "add_key": "controller_basic_module",
+         "add_key": "controller_protected_module",
          "mode": "a=r,u+w",
          "dmode": "a=rx,u+w"
       },
       {
-         "source": "controller-private-routes.pm",
+         "source": "controller-public-module.pm",
          "destination": "*module",
-         "suffix": "::Controller::Authenticated::Basic",
-         "condition": "has_authentication",
-         "add_key": "controller_authenticated_basic_module",
+         "suffix": "::Controller::Public",
+         "condition": "has_controller",
+         "add_key": "controller_public_module",
          "mode": "a=r,u+w",
          "dmode": "a=rx,u+w"
       },
       {
          "source": "controller-authentication-routes.pm",
          "destination": "*module",
-         "suffix": "::Controller::Authentication",
+         "suffix": "::Controller::Public::Authentication",
          "condition": "has_authentication",
          "add_key": "controller_authentication_module",
+         "mode": "a=r,u+w",
+         "dmode": "a=rx,u+w"
+      },
+      {
+         "source": "model-module.pm",
+         "destination": "*module",
+         "add_key": "model_module",
+         "suffix": "::Model",
+         "mode": "a=r,u+w",
+         "dmode": "a=rx,u+w"
+      },
+      {
+         "source": "model-mojodb-module.pm",
+         "destination": "*module",
+         "add_key": "model_mojodb_module",
+         "suffix": "::Model::MojoDb",
+         "mode": "a=r,u+w",
+         "dmode": "a=rx,u+w"
+      },
+      {
+         "source": "model-authn-module.pm",
+         "destination": "*module",
+         "add_key": "model_authn_module",
+         "suffix": "::Model::Authentication",
+         "mode": "a=r,u+w",
+         "dmode": "a=rx,u+w"
+      },
+      {
+         "source": "model-authn-local-module.pm",
+         "destination": "*module",
+         "add_key": "model_authn_local_module",
+         "suffix": "::Model::Authentication::Local",
+         "mode": "a=r,u+w",
+         "dmode": "a=rx,u+w"
+      },
+      {
+         "source": "model-authn-hash-module.pm",
+         "destination": "*module",
+         "add_key": "model_authn_hash_module",
+         "suffix": "::Model::Authentication::Hash",
+         "mode": "a=r,u+w",
+         "dmode": "a=rx,u+w"
+      },
+      {
+         "source": "model-authn-db-module.pm",
+         "destination": "*module",
+         "add_key": "model_authn_db_module",
+         "suffix": "::Model::Authentication::Db",
+         "mode": "a=r,u+w",
+         "dmode": "a=rx,u+w"
+      },
+      {
+         "source": "model-authz-module.pm",
+         "destination": "*module",
+         "add_key": "model_authz_module",
+         "suffix": "::Model::Authorization",
          "mode": "a=r,u+w",
          "dmode": "a=rx,u+w"
       },

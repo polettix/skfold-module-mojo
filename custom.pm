@@ -70,6 +70,7 @@ sub adapt_module_configuration {
             }
          } sort { $a cmp $b } keys %pods;
       }
+      elsif ($model{destination} =~ m{\A \*skip}mxs) {}
       else {
          $model{opts} = {%common_options, %{$model{opts} || {}}};
          if (exists $model{source}) {

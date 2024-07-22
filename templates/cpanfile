@@ -1,20 +1,25 @@
 requires 'perl', '5.024000';
 requires 'Mojolicious';
 requires 'IO::Socket::SSL';
-[% if (V 'has_db') { %]
-requires 'DBI';
-requires 'Mojo::SQLite';
-requires 'Mojo::Pg';
-[% if (V 'has_minion') { %]
-requires 'Minion';
-requires 'Minion::Backend::SQLite';
-[%    } %]
-[% } %]
-[% if (V 'has_authentication') { %]
-requires 'Mojolicious::Plugin::Authentication';
-[% } %]
 requires 'Ouch';
 requires 'Try::Catch';
+
+[%
+   my %pfx = map { $_ => (V("has_$_") ? '' : '# ') }
+      qw< db minion authentication >;
+%]
+
+[%= $pfx{db} %]requires 'DBI';
+[%= $pfx{db} %]requires 'Mojo::SQLite';
+# requires 'Mojo::Pg';
+
+[%= $pfx{minion} %]requires 'Minion';
+[%= $pfx{minion} %]requires 'Minion::Backend::SQLite';
+
+[%= $pfx{authentication} %]requires 'Mojolicious::Plugin::Authentication';
+[%= $pfx{authentication} %]requires 'Mojolicious::Plugin::Passphrase';
+[%= $pfx{authentication} %]requires 'Crypt::Passphrase';
+[%= $pfx{authentication} %]requires 'Crypt::Passphrase::Argon2';
 
 on test => sub {
    requires 'Path::Tiny',      '0.084';

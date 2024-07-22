@@ -5,33 +5,13 @@ use experimental 'signatures';
 
 use Exporter 'import';
 
-######### FIXME ###########################################################
-#
-# This is just a little more than a stub!
-#
-
 sub load_user ($app, $uid) {
-   state $user_for = {
-      foo => {
-         name => 'Foo De Galook',
-         password => 'FOO',
-      },
-      bar => {
-         name => 'Bar Bazius',
-         password => 'BAR',
-      },
-      admin => {
-         name => 'Ad Ministrator',
-         password => 'admin',
-      },
-   };
-   return unless exists($user_for->{$uid});
-   return $user_for->{$uid};
+   return $app->model->authentication->load_user($uid);
 }
 
 sub validate_user ($controller, $username, $password, $extra) {
-   my $user = load_user($controller->app, $username) or return;
-   return $username if $user->{password} eq $password;
+   my $authn = $controller->app->model->authentication;
+   return $authn->validate_user($username, $password, $extra);
 }
 
 1;

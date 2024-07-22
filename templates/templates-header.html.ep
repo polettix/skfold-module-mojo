@@ -3,9 +3,9 @@
 %= link_to $site_title => '/' => class => 'site-title'
 % if ($account) {
 %= link_to Authenticated => '/auth' => class => 'site-title'
-<em><%= $account->{name} %></em> (<%= link_to logout => '/logout' %>)
+<em><%= $account->{name} %></em> (<%= link_to logout => '/public/auth/logout' %>)
 % } else {
-%= form_for '/login' => (method => 'post') => begin
+%= form_for '/public/auth/login' => (method => 'post') => begin
 %=    text_field     username => placeholder => 'username...'
 %=    password_field password => placeholder => 'password...'
 %=    submit_button 'log in' 

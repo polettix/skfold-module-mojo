@@ -1,61 +1,83 @@
+#!/usr/bin/env perl
+[%
+   my %has = map { $_ => V("has_$_") }
+      qw< authentication controller db minion >;
+   my %pfx = map { $_ => ($has{$_} ? '' : '# ') }
+      qw< db minion authentication >;
+%]
 package [% main_module %];
 use v5.24;
-use Mojo::Base 'Mojolicious', -signatures;
-use Ouch ':trytiny_var';
+use Mojo::Base qw< Mojolicious -signatures >;
+use Ouch qw< :trytiny_var >;
 use Try::Catch;
+use Storable qw< dclone >;
 use Mojo::Util qw< b64_decode >;
-[%
-   my $has_db = V 'has_db';
-   my $has_minion = V 'has_minion';
-   my $has_controller = V 'has_controller';
-   my $has_authentication = V 'has_authentication';
-   $has_db = 1 if $has_authentication;
+[%= $pfx{controller} %]use [% all_modules.controller_module %];
+use [% all_modules.model_module %];
 
-   if ($has_controller) {
-%]use [% all_modules.controller_module %];
-[% } %]
 use constant MONIKER => '[%=
    (my $moniker = lc V("main_module")) =~ s{::}{-}gmxs;
    $moniker;
 %]';
-use constant DEFAULT_SECRETS => '[%=
-   use MIME::Base64 "encode_base64";
-   encode_base64(time() . "-" . rand(), '');
-%]';
 
-has 'conf';
-[%
-   if ($has_db) {
-%]has model => \&_new_db_instance;
-[% } %]
+use constant DEFAULTS => {
+   CONFIG => {},
+   DATABASE_URL => 'sqlite:./tmp/test.db',
+   SECRETS => '[%=
+      use MIME::Base64 "encode_base64";
+      encode_base64(time() . "-" . rand(), '');
+   %]',
+   SECRETS => ['FIXME'],
+};
+
+has 'model';
+
 sub startup ($self) {
    $self->moniker(MONIKER);
-   $self->_startup_config
-      ->_startup_secrets[% if ($has_db) { %]
-      ->_startup_model[% } %][% if ($has_authentication) { %]
-      ->_startup_authentication[% } %]
-      ->_startup_hooks[% if ($has_minion) { %]
-      ->_startup_minion[% } %][% if ($has_controller) { %]
-      ->_startup_routes[% } %]
-      ;[% if ($has_controller) { %]
-   $self->controller_class('[% all_modules.controller_module %]');[% } %]
-   $self->log->info('startup complete');
    $self->defaults(layout => 'default');
+
+   $self->_startup_config;
+   $self->_startup_secrets;
+   $self->_startup_model;
+
+[% if ($has{minion}) { %]
+   $self->_startup_minion;
+[% } %]
+
+[% if ($has{controller}) { %]
+   $self->_startup_hooks;
+   $self->_startup_routes;
+   $self->controller_class('[% all_modules.controller_module %]');
+[% } %]
+
+[% if ($has{authentication}) { %]
+   $self->_startup_authentication;
+[% } %]
+
+   $self->log->info('startup complete');
    return $self;
 }
 
 sub _startup_config ($self) {
-   my $config = eval { $self->plugin('NotYAMLConfig') } || {};
+   my $defaults_for = DEFAULTS;
+   my $config =
+      $self->plugin(JSONConfig => { default => $defaults_for->{CONFIG}});
 
    # variables with a prefix
    my $prefix = (uc(MONIKER) =~ s{-}{_}rgmxs) . '_';
-   for my $key (qw<
-         [% if ($has_db) { %]dsn_url[% } %]
-         remap_env
-      >) {
+   my @prefixed = (
+      qw< remap_env secrets >,
+      [%= $pfx{db} %]'dsn_url',
+   );
+   for my $key (@prefixed) {
       my $env_key = $prefix . uc($key);
       $config->{$key} = $ENV{$env_key} if defined $ENV{$env_key};
    }
+
+   # variables without a prefix
+   $config->{database_url} //=
+     $config->{dsn_url} // $defaults_for->{DATABASE_URL};
+   $config->{secrets} //= $defaults_for->{SECRETS};
 
    # variables to be taken remapped from the environment
    if (defined(my $remaps = $config->{remap_env})) {
@@ -66,46 +88,64 @@ sub _startup_config ($self) {
       }
    }
 
-   $self->conf($config); # WARN: this is really named "conf", NOT "config"
    return $self;
 }
-[%
-   if ($has_db) {
-%]
-sub _dsn ($self) { $self->conf->{dsn} // ouch 500, 'no DSN set' }
-sub _db_technology ($self) {
-   return $self->_dsn =~ m{postgres}imxs ? 'Pg' : 'SQLite';
-}
-sub _db_class ($self) { 'Mojo::' . $self->_db_technology }
-sub _new_db_instance ($self) { $self->_db_class->new($self->_dsn) }
+
+# Set secrets. They might come in array or encoded string form, in which
+# case we have to split the string and decode it.
+sub _startup_secrets ($self) {
+   my $secrets = $self->config->{secrets};
+   $secrets = [ map { b64_decode($_) } split m{\s+}mxs, $secrets ]
+      unless ref($secrets);
+   $self->secrets($secrets);
+   return $self;
+} ## end sub _startup_secrets
+
 sub _startup_model ($self) {
-   # FIXME anything to do here?
+   my $config = $self->config;
+   my $model = [% all_modules.model_module %]->new(
+      [%= $pfx{db} %]db_url => $self->config->{database_url},
+
+      authentication_options => {
+         # comment this if you want to enable local hash-based auth with
+         # accounts set directly in the module. Pass a hash or a JSON
+         # string or a path to a JSON file to load something else. undef
+         # means disable it altogether.
+         hash => undef,
+      },
+      
+   );
+   $self->model($model);
+
+   # do anything that's needed for initialization here...
+   $model->wmdb->init($self->moniker);
+
    return $self;
 }
-[%
-      if ($has_minion) {
-%]
+
 sub _startup_minion ($self) {
-   $self->plugin(Minion => { $self->_db_technology => $self->_dsn });
+   my $wmdb = $self->model->wmdb;
+   $self->plugin(Minion => { $wmdb->mdb_engine => $wmdb->db_url });
    $self->plugin('Minion::Admin');
    $self->plugin('[% all_modules.minion_module %]');
    return $self;
 }
+
+
 [%
-      }
-   }
+   if ($has{controller}) {
 %]
-[%
-      if ($has_authentication) {
-%]
+sub _startup_hooks ($self) {
+   return $self;
+}
+
 sub _startup_authentication ($self) {
-   require [% all_modules.authentication_module %];
-   my $module = '[% all_modules.authentication_module %]';
+   my $authn = $self->model->authentication;
    $self->plugin(
       Authentication => {
-         load_user     => $module->can('load_user'),
-         validate_user => $module->can('validate_user'),
-      }
+         load_user => sub ($a, $i)     { $authn->load_user($i)     },
+         validate_user => sub ($c, @A) { $authn->validate_user(@A) },
+      },
    );
 
    $self->hook(
@@ -139,31 +179,65 @@ sub _startup_authentication ($self) {
 sub _authenticated_routes ($self, $root) {
    $root->get('/')->to('authenticated-basic#root');
 }
-[%
-   }
-%]
-sub __split_and_decode ($s) { map { b64_decode($_) } split m{\s+}mxs, $s }
-
-sub _startup_hooks ($self) {
-   return $self;
-}
-
-sub _startup_secrets ($self) {
-   my $config = $self->conf;
-   my @secrets =
-       defined $ENV{SECRETS}      ? __split_and_decode($ENV{SECRETS})
-     : defined $config->{secrets} ? $config->{secrets}->@*
-     :                              __split_and_decode(DEFAULT_SECRETS);
-   $self->secrets(\@secrets);
-   return $self;
-} ## end sub _startup_secrets
-[%
-   if ($has_controller) {
-%]
+########################################################################
+#
+# Routes, where all the fun happens!
+#
+# By default, routes are private and subject to authentication. The
+# exception set by default is everything under '/public', including
+# '/public/auth' to cope with login/logout in locally managed accounts
+#
 sub _startup_routes ($self) {
-   my $r = $self->routes;
-   $r->any('/')->to('basic#root');
+   my $root = $self->routes;
+
+   my $public_root = $root->any('/public')->name('public_root');
+   my $protected_root = $root->under(
+      '/' => sub ($c) {
+         if ($c->is_user_authenticated) {
+            $c->stash(is_user_authenticated => 1);
+            return 1;
+         }
+         $c->log->debug('not authenticated, bouncing to public home');
+         $c->stash(is_user_authenticated => 0);
+         $c->redirect_to('public_root');
+         return 0;
+      }
+   );
+
+   $self->_public_routes($public_root)
+      ->_authentication_routes($public_root->any('/auth'))
+      ->_protected_routes($protected_root)
+      ->_default_to_404($root);
+
    return $self;
 }
+
+# Routes for local authentication (trivial/db)
+sub _authentication_routes ($self, $root) {
+   my %ctr = (controller => 'Public::Authentication');
+   $root->get('/login')->to(%ctr, action => 'show_login');
+   $root->post('/login')->to(%ctr, action => 'do_login');
+   $root->get('/logout')->to(%ctr, action => 'do_logout');
+   $root->post('/logout')->to(%ctr, action => 'do_logout');
+   return $self;
+}
+
+sub _default_to_404 ($self, $root) {
+   my $nf = sub ($c) {$c->render(template => 'not_found', status => 404)};
+   $root->any($_ => $nf) for qw< * / >;
+   return $self;
+}
+
+############## MAIN BUSINESS LOGIC ########################################
+sub _public_routes ($self, $root) {
+   $root->get('/')->to('public#root');
+   return $self;
+}
+
+sub _protected_routes ($self, $root) {
+   $root->get('/')->to('protected#root');
+   return $self;
+}
+
 [% } %]
 1;
