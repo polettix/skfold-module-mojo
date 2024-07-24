@@ -22,7 +22,7 @@ sub validate_user ($self, $name, $secret, $extra) {
    my $user = $self->load_user_by_name($name) or return;
    my $cp = $self->crypt_passphrase;
    my $check = $cp->verify_password($secret, $user->{secret});
-   return $check ? $user->{id} // $name : undef;
+   return $check ? $name : undef;  # externally visible id is $name
 }
 
 1;

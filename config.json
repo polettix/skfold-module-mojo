@@ -105,6 +105,11 @@
          "mode": "a=r,u+w"
       },
       {
+         "source": "templates-flash.html.ep",
+         "destination": "templates/flash.html.ep",
+         "mode": "a=r,u+w"
+      },
+      {
          "source": "templates-footer.html.ep",
          "destination": "templates/footer.html.ep",
          "mode": "a=r,u+w"
@@ -124,12 +129,17 @@
          "mode": "a=r,u+w"
       },
       {
-         "destination": "templates/authenticated",
+         "destination": "templates/protected",
          "mode": "a=rx,u+w"
       },
       {
-         "source": "templates-authenticated-home.html.ep",
-         "destination": "templates/authenticated/home.html.ep",
+         "source": "templates-protected-home.html.ep",
+         "destination": "templates/protected/home.html.ep",
+         "mode": "a=r,u+w"
+      },
+      {
+         "source": "templates-protected-example.html.ep",
+         "destination": "templates/protected/example.html.ep",
          "mode": "a=r,u+w"
       },
       {
@@ -156,15 +166,6 @@
          "dmode": "a=rx,u+w"
       },
       {
-         "source": "authentication-module.pm",
-         "destination": "*skip module",
-         "suffix": "::Authentication",
-         "condition": "has_authentication",
-         "add_key": "authentication_module",
-         "mode": "a=r,u+w",
-         "dmode": "a=rx,u+w"
-      },
-      {
          "source": "controller-module.pm",
          "destination": "*module",
          "suffix": "::Controller",
@@ -179,6 +180,15 @@
          "suffix": "::Controller::Protected",
          "condition": "has_controller",
          "add_key": "controller_protected_module",
+         "mode": "a=r,u+w",
+         "dmode": "a=rx,u+w"
+      },
+      {
+         "source": "controller-protected-example-module.pm",
+         "destination": "*module",
+         "suffix": "::Controller::Protected::Example",
+         "condition": "has_controller",
+         "add_key": "controller_protected_example_module",
          "mode": "a=r,u+w",
          "dmode": "a=rx,u+w"
       },
@@ -245,6 +255,30 @@
          "destination": "*module",
          "add_key": "model_authn_db_module",
          "suffix": "::Model::Authentication::Db",
+         "mode": "a=r,u+w",
+         "dmode": "a=rx,u+w"
+      },
+      {
+         "source": "model-authn-saml2-module.pm",
+         "destination": "*module",
+         "add_key": "model_authn_saml2_module",
+         "suffix": "::Model::Authentication::SAML2",
+         "mode": "a=r,u+w",
+         "dmode": "a=rx,u+w"
+      },
+      {
+         "source": "model-authn-saml2-db-module.pm",
+         "destination": "*module",
+         "add_key": "model_authn_saml2_db_module",
+         "suffix": "::Model::Authentication::SAML2::Db",
+         "mode": "a=r,u+w",
+         "dmode": "a=rx,u+w"
+      },
+      {
+         "source": "model-authn-saml2-hash-module.pm",
+         "destination": "*module",
+         "add_key": "model_authn_saml2_hash_module",
+         "suffix": "::Model::Authentication::SAML2::Hash",
          "mode": "a=r,u+w",
          "dmode": "a=rx,u+w"
       },

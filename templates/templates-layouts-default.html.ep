@@ -8,6 +8,7 @@
   </head>
   <body>
 %= include 'header'
+%= include 'flash'
     <div id="content"><%= content %></div>
 %= include 'footer'
   </body>

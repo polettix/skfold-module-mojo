@@ -1,6 +1,8 @@
 requires 'perl', '5.024000';
-requires 'Mojolicious';
 requires 'IO::Socket::SSL';
+requires 'Mojolicious';
+requires 'Module::Runtime';
+requires 'Net::SAML2';
 requires 'Ouch';
 requires 'Try::Catch';
 

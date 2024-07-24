@@ -28,6 +28,12 @@ use constant DEFAULTS => {
       encode_base64(time() . "-" . rand(), '');
    %]',
    SECRETS => ['FIXME'],
+   HARDCODED_AUTHENTICATION_DB => [
+      { name => foo => secret => 123  },
+      { name => bar => secret => 456  },
+      { name => baz => secret => 789  },
+      { name => galook => secret => 0 },
+   ],
 };
 
 has 'model';
@@ -107,11 +113,43 @@ sub _startup_model ($self) {
       [%= $pfx{db} %]db_url => $self->config->{database_url},
 
       authentication_options => {
-         # comment this if you want to enable local hash-based auth with
-         # accounts set directly in the module. Pass a hash or a JSON
-         # string or a path to a JSON file to load something else. undef
-         # means disable it altogether.
-         hash => undef,
+
+         # order of providers matter, first ones are checked first.
+         # Pass:
+         # - an object instance
+         # - a sub reference
+         # - a hash ref with keys (instance) or (class, args). Optionally
+         #   set a name with key name
+         # If key name is present in hash, or instance support the 'name'
+         # method, a name is set for later retrieval of the instance by
+         # method instance_for($name).
+         # Some examples below...
+         providers => [
+            {
+               name  => 'hashy',
+               class => '[% all_modules.model_authn_hash_module %]',
+               args  => [
+                  db => DEFAULTS->{HARDCODED_AUTHENTICATION_DB},
+
+                  # set to true if secrets in db already hashed 
+                  secrets_already_hashed => 0,
+               ],
+            },
+            {
+               name  => 'db',
+               class => '[% all_modules.model_authn_db_module %]',
+               args  => [],
+            },
+            # above also:
+            # sub ($model) {
+            #    require [% all_modules.model_authn_db_module %];
+            #    [% all_modules.model_authn_db_module %]->create(
+            #       model => $model,
+            #       name => 'db',
+            #    );
+            # },
+         ],
+
       },
       
    );
@@ -143,7 +181,7 @@ sub _startup_authentication ($self) {
    my $authn = $self->model->authentication;
    $self->plugin(
       Authentication => {
-         load_user => sub ($a, $i)     { $authn->load_user($i)     },
+         load_user     => sub ($a, $x) { $authn->load_user($x)     },
          validate_user => sub ($c, @A) { $authn->validate_user(@A) },
       },
    );
@@ -236,6 +274,8 @@ sub _public_routes ($self, $root) {
 
 sub _protected_routes ($self, $root) {
    $root->get('/')->to('protected#root');
+   $root->get('/example')->to(controller => 'Protected::Example',
+      action => 'root');
    return $self;
 }
 

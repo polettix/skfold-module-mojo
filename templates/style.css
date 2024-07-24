@@ -35,3 +35,17 @@ div#content h1 {
    padding: 0;
    margin: 1rem 0;
 }
+
+div#flash.error, div#flash.ok {
+   text-align: center;
+}
+
+div#flash.error {
+   background-color: red;
+   color: white;
+}
+
+div#flash.ok {
+   background-color: green;
+   color: white;
+}

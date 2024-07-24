@@ -43,6 +43,8 @@ sub id_or_insert ($self, $table, $condition, $default, %opts) {
       [ id_or_insert => $table, $condition, $default, %opts];
 }
 
+sub select ($self, @args) { $self->db->select(@args) }
+
 sub upsert ($self, $table, $data, $opts) {
    $self->db->insert($table, $data, { $opts->%*, on_conflict => $data });
    return $self;
