@@ -131,7 +131,7 @@ sub _startup_model ($self) {
                args  => [
                   db => DEFAULTS->{HARDCODED_AUTHENTICATION_DB},
 
-                  # set to true if secrets in db already hashed 
+                  # set to true if secrets in db already hashed
                   secrets_already_hashed => 0,
                ],
             },
@@ -151,7 +151,7 @@ sub _startup_model ($self) {
          ],
 
       },
-      
+
    );
    $self->model($model);
 

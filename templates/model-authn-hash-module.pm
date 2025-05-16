@@ -27,7 +27,7 @@ sub create ($class, $model, %args) {
          } $db->@*
       ];
    }
-   
+
    # normalize to hash reference name => record
    $db = { map { $_->{name} => $_ } $db->@* } if ref($db) eq 'ARRAY';
 
