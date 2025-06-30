@@ -4,6 +4,7 @@ requires 'Mojolicious';
 requires 'Module::Runtime';
 requires 'Net::SAML2';
 requires 'Ouch';
+requires 'Template::Perlish', '1.58';
 requires 'Try::Catch';
 
 [%
@@ -29,7 +30,7 @@ on test => sub {
 
 on develop => sub {
    requires 'Path::Tiny',          '0.084';
-   requires 'Template::Perlish',   '1.52';
+   requires 'Template::Perlish',   '1.58';
    requires 'Test::Pod::Coverage', '1.04';
    requires 'Test::Pod',           '1.51';
 };

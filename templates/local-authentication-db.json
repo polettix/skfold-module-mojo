@@ -1,0 +1,6 @@
+[
+  { "name": "foo",    "secret": "123" },
+  { "name": "bar",    "secret": "456" },
+  { "name": "baz",    "secret": "789" },
+  { "name": "galook", "secret": "abc" }
+]

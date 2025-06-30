@@ -1,3 +1,4 @@
+# SAML 2.0, cache module for keeping authentication data in a DB
 package [% module %];
 use Mojo::Base qw< [% all_modules.model_authn_saml2_module %] -signatures >;
 use JSON::PP qw< encode_json decode_json >;

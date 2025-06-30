@@ -300,6 +300,20 @@
          "dmode": "a=rx,u+w"
       },
       {
+         "source": "local-authentication-db.json",
+         "destination": "tmp/local-authentication-db.json",
+         "condition": "has_authentication",
+         "mode": "a=r,u+w",
+         "dmode": "a=rx,u+w"
+      },
+      {
+         "source": "saml2-config.json",
+         "destination": "tmp/saml2-config.json",
+         "condition": "has_authentication",
+         "mode": "a=r,u+w",
+         "dmode": "a=rx,u+w"
+      },
+      {
          "**NOTE**": "leave this fragment *after* any module",
          "source": "module.pod",
          "destination": "*pod",

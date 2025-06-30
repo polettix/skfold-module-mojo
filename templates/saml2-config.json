@@ -1,0 +1,45 @@
+{
+   "idp_configuration": {
+      "metadata": "https://mocksaml.com/api/saml/metadata?download=true",
+      "remaps" : [
+         {
+            "email": "[%= flatten(V 'email') %]",
+            "firstName": "[%= flatten(V 'firstName') %]",
+            "lastName": "[%= flatten(V 'lastName') %]",
+            "id": "[%= flatten(V 'id') %]"
+         },
+         {
+            "fullname": "[% firstName %] [% lastName %]"
+         }
+      ]
+   },
+   "sp_configuration": {
+      "assertion_consumer_service": [
+         {
+               "Binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST",
+               "Location": "https://foobar.local.tantrum.org:8443/public/saml2/login",
+               "isDefault": "true"
+         }
+      ],
+
+      "note on cert/key": [
+         "# generate with e.g.:  ",
+         "   openssl req -x509 -newkey rsa:4096 -sha256 \\",
+         "      -days 365 -nodes -subj '/CN=localhost' \\",
+         "      -keyout tmp/sp.key -out tmp/sp.crt"
+      ],
+      "cert": "./tmp/sp.crt",
+      "key": "./tmp/sp.key",
+
+      "issuer": "https://sp.foobar.local.tantrum.org",
+      "url": "https://foobar.local.tantrum.org:8443",
+      "error_url": "https://foobar.local.tantrum.org:8443/public/saml2/error",
+      "org_name": "Foo Bar",
+      "org_display_name": "Foo Bar",
+      "org_contact": "foobar@example.com",
+      "authnreq_signed": 1,
+      "sign_metadata": 1,
+      "want_assertions_signed": 1,
+      "sso-post-url-override": "https://foobar.local.tantrum.org:8443/public/saml2/login"
+   }
+}

@@ -12,6 +12,8 @@ use Ouch qw< :trytiny_var >;
 use Try::Catch;
 use Storable qw< dclone >;
 use Mojo::Util qw< b64_decode >;
+use Mojo::JSON qw< decode_json >;
+use Mojo::File;
 [%= $pfx{controller} %]use [% all_modules.controller_module %];
 use [% all_modules.model_module %];
 
@@ -23,17 +25,11 @@ use constant MONIKER => '[%=
 use constant DEFAULTS => {
    CONFIG => {},
    DATABASE_URL => 'sqlite:./tmp/test.db',
-   SECRETS => '[%=
+   SECRETS => ['[%=
       use MIME::Base64 "encode_base64";
       encode_base64(time() . "-" . rand(), '');
-   %]',
-   SECRETS => ['FIXME'],
-   HARDCODED_AUTHENTICATION_DB => [
-      { name => foo => secret => 123  },
-      { name => bar => secret => 456  },
-      { name => baz => secret => 789  },
-      { name => galook => secret => 0 },
-   ],
+   %]'],
+   LOCAL_AUTHENTICATION_DB => './tmp/local-authentication-db.json',
 };
 
 has 'model';
@@ -127,17 +123,17 @@ sub _startup_model ($self) {
          providers => [
             {
                name  => 'hashy',
-               class => '[% all_modules.model_authn_hash_module %]',
+               class => 'MojoX::Authentication::Model::Hash',
                args  => [
-                  db => DEFAULTS->{HARDCODED_AUTHENTICATION_DB},
+                  db => decode_json(Mojo::File->new(DEFAULTS->{LOCAL_AUTHENTICATION_DB})->slurp),
 
-                  # set to true if secrets in db already hashed
+                  # set to true if secrets in db already hashed 
                   secrets_already_hashed => 0,
                ],
             },
             {
                name  => 'db',
-               class => '[% all_modules.model_authn_db_module %]',
+               class => 'MojoX::Authentication::Model::Db',
                args  => [],
             },
             # above also:
@@ -148,10 +144,21 @@ sub _startup_model ($self) {
             #       name => 'db',
             #    );
             # },
+
+            # SAML 2.0
+            {
+               name => 'saml2',
+               class => 'MojoX::Authentication::Model::SAML2',
+               args => [
+                  cache => 'MojoX::Authentication::Model::SAML2::Hash',
+                  idp_configuration => $config->{idp_configuration},
+                  sp_configuration  => $config->{sp_configuration},
+               ],
+            },
          ],
 
       },
-
+      
    );
    $self->model($model);
 
@@ -194,29 +201,9 @@ sub _startup_authentication ($self) {
       }
    );
 
-   # routes scaffolding
-   my $r = $self->routes;
-   $r->get('login')->to('authentication#show_login');
-   $r->post('login')->to('authentication#do_login');
-   $r->get('logout')->to('authentication#do_logout');
-   $r->post('logout')->to('authentication#do_logout');
-   # FIXME add routes for API login/logout
-
-   # to set authenticated routes, change method "_authenticated_routes"
-   my $auth = $r->under('/auth')->to('authentication#check');
-   $self->_authenticated_routes($auth);
-
-   # add a final catchall to force anything under /auth to require
-   # authentication, even non-existent routes. This avoids leaking info
-   # about which authenticated routes are valid and which not.
-   $auth->any('*' => sub ($c) { return $c->render(status => 404) });
-
    return $self;
 }
 
-sub _authenticated_routes ($self, $root) {
-   $root->get('/')->to('authenticated-basic#root');
-}
 ########################################################################
 #
 # Routes, where all the fun happens!
@@ -228,7 +215,12 @@ sub _authenticated_routes ($self, $root) {
 sub _startup_routes ($self) {
    my $root = $self->routes;
 
+   # this is the root route where all public (i.e. no authentication) stuff
+   # will end up, including all routes regarding authentication login and
+   # logout (so that they're always reachable).
    my $public_root = $root->any('/public')->name('public_root');
+
+   # this is the root for anything else.
    my $protected_root = $root->under(
       '/' => sub ($c) {
          if ($c->is_user_authenticated) {
@@ -242,17 +234,19 @@ sub _startup_routes ($self) {
       }
    );
 
-   $self->_public_routes($public_root)
-      ->_authentication_routes($public_root->any('/auth'))
+   $self
       ->_protected_routes($protected_root)
+      ->_local_authentication_routes($public_root->any('/auth'))
+      ->_saml2_authentication_routes($public_root->any('/saml2'))
+      ->_public_routes($public_root)
       ->_default_to_404($root);
 
    return $self;
 }
 
 # Routes for local authentication (trivial/db)
-sub _authentication_routes ($self, $root) {
-   my %ctr = (controller => 'Public::Authentication');
+sub _local_authentication_routes ($self, $root) {
+   my %ctr = (namespace => 'MojoX::Authentication', controller => 'Controller');
    $root->get('/login')->to(%ctr, action => 'show_login');
    $root->post('/login')->to(%ctr, action => 'do_login');
    $root->get('/logout')->to(%ctr, action => 'do_logout');
@@ -260,13 +254,25 @@ sub _authentication_routes ($self, $root) {
    return $self;
 }
 
+# Routes for SAML 2.0 authentication
+sub _saml2_authentication_routes($self, $root) {
+   my %ctr = (namespace => 'MojoX::Authentication', controller => 'Controller');
+   $root->get('/login')->to(%ctr, action => 'saml2_login');
+   $root->post('/login')->to(%ctr, action => 'saml2_sso_post');
+   $root->get('/logout')->to(%ctr, action => 'saml2_logout');
+   $root->post('/logout')->to(%ctr, action => 'saml2_logout');
+   $root->get('/metadata')->to(%ctr, action => 'saml2_sp_metadata');
+   return $self;
+}
+
+# Self-explanatory route (add at the end for default)
 sub _default_to_404 ($self, $root) {
    my $nf = sub ($c) {$c->render(template => 'not_found', status => 404)};
    $root->any($_ => $nf) for qw< * / >;
    return $self;
 }
 
-############## MAIN BUSINESS LOGIC ########################################
+############## MAIN BUSINESS LOGIC ROUTES #################################
 sub _public_routes ($self, $root) {
    $root->get('/')->to('public#root');
    return $self;
